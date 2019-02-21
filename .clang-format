@@ -1,0 +1,5 @@
+# clang-format [options]
+# Styles based on LLVM Style Guide
+Language:        Cpp
+BasedOnStyle:  LLVM
+ColumnLimit:     100
