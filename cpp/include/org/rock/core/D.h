@@ -3,11 +3,12 @@
  *
  */
 
-#ifndef ROCK_D_H
-#define ROCK_D_H
+#ifndef ORG_ROCK_D_H
+#define ORG_ROCK_D_H
 
-#include "rock/core/A.h"
+#include "org/rock/core/A.h"
 
+namespace org {
 namespace rock {
 namespace core {
 
@@ -31,5 +32,6 @@ namespace core {
 
 } // namespace core
 } // namespace rock
+} // namespace org
 
-#endif // ROCK_D_H
+#endif // ORG_ROCK_D_H

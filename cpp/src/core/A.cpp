@@ -4,8 +4,9 @@
  */
 
 #include <string>
-#include "rock/core/A.h"
+#include "org/rock/core/A.h"
 
+namespace org {
 namespace rock {
 namespace core {
 
@@ -75,3 +76,4 @@ const std::string get_name_of_other(const A& other)
 
 } // namespace core
 } // namespace rock
+} // namespace org

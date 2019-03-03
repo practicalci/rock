@@ -2,6 +2,12 @@
 rock
 ====
 
+A rock solid project
+
+-------
+Summary
+-------
+
 A rock solid project with enforced style, testing and static analysis
 
 This project is a template from ``gh:practicalci/cookiecutter-cpp`` cookiecutter.

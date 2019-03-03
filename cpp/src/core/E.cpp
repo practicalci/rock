@@ -5,7 +5,9 @@
 
 #include "E.h"
 
+namespace org {
 namespace rock {
+
 namespace core {
 namespace detail {
 
@@ -31,3 +33,4 @@ const std::string E::get_name() const
 } // namespace detail
 } // namespace core
 } // namespace rock
+} // namespace org

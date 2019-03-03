@@ -3,8 +3,9 @@
  *
  */
 
-#include "rock/core/B.h"
+#include "org/rock/core/B.h"
 
+namespace org {
 namespace rock {
 namespace core {
 
@@ -41,3 +42,4 @@ const int B::get_private() const
 
 } // namespace core
 } // namespace rock
+} // namespace org

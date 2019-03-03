@@ -3,9 +3,10 @@
  *
  */
 
-#ifndef ROCK_B_H
-#define ROCK_B_H
+#ifndef ORG_ROCK_B_H
+#define ORG_ROCK_B_H
 
+namespace org {
 namespace rock {
 namespace core {
 
@@ -35,6 +36,7 @@ namespace core {
 
 } // namespace core
 } // namespace rock
+} // namespace org
 
-#endif // ROCK_B_H
+#endif // ORG_ROCK_B_H
 

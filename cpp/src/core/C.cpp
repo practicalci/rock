@@ -3,8 +3,9 @@
  *
  */
 
-#include "rock/core/C.h"
+#include "org/rock/core/C.h"
 
+namespace org {
 namespace rock {
 namespace core {
 
@@ -58,3 +59,4 @@ std::string C::overloadMethod(A a, C c) {
 
 } // namespace core
 } // namespace rock
+} // namespace org

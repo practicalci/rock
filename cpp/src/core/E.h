@@ -3,13 +3,14 @@
  *
  */
 
-#ifndef ROCK_E_H
-#define ROCK_E_H
+#ifndef ORG_ROCK_E_H
+#define ORG_ROCK_E_H
 
 #include <string>
 
 // This is a private class, it is not exposed to the public API of the project.
 
+namespace org {
 namespace rock {
 namespace core {
 namespace detail {
@@ -31,5 +32,6 @@ namespace detail {
 } // namespace detail
 } // namespace core
 } // namespace rock
+} // namespace org
 
-#endif // ROCK_E_H
+#endif // ORG_ROCK_E_H

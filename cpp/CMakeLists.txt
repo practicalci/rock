@@ -1,13 +1,13 @@
 # rock
-# A rock solid project with enforced style, testing and static analysis
+# A rock solid project
 # Copyright 2019, First Last
 
 cmake_minimum_required(VERSION 3.12)
 project(rock VERSION 1.0.0 LANGUAGES C CXX)
-set(PROJECT_DESCRIPTION   "A rock solid project with enforced style, testing and static analysis")
-set(PROJECT_AUTHOR        "First Last")
-set(PROJECT_URL           "https://github.com/practicalci/rock")
-
+set(PROJECT_DESCRIPTION "A rock solid project")
+set(PROJECT_AUTHOR      "First Last")
+set(PROJECT_URL         "https://bitbucket.org/flast/rock")
+set(PROJECT_NAMESPACE   "org")
 
 option(BUILD_STATIC "Build static libraries." OFF)
 
@@ -15,9 +15,21 @@ option(BUILD_PYTHON_PYBIND11 "Build pybind11 python bindings." ON)
 option(BUILD_PYTHON_SWIG "Build pybind11 python bindings." OFF)
 
 option(BUILD_DOC "Build code documentation using Doxygen." OFF)
-option(BUILD_TESTS "Build project tests" ON) # TODO
+option(BUILD_TESTS "Build project tests" ON)
 
+option(USE_PYTHON_INTEPERTER_SITE_PACKAGES 
+  "set PYTHON_SITE_PACKAGES using cmake Python package interperter Python_SITEARCH" ON)
 
+include(GNUInstallDirs)
+
+string(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UPPER)
+set(PROJECT_SUFFIX ${PROJECT_NAMESPACE}/${PROJECT_NAME})
+set(PROJECT_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_SUFFIX})
+set(PROJECT_INCLUDEDIR ${PROJECT_SOURCE_DIR}/include/${PROJECT_SUFFIX})
+
+set(PROJECT_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}/${PROJECT_SUFFIX})
+
+set(PROJECT_TEST_TARGET test_${PROJECT_NAME})
 
 # ------------------------------------------------------------------------------
 # Add external cmake modules to project.
@@ -27,29 +39,12 @@ option(BUILD_TESTS "Build project tests" ON) # TODO
 # Make sure that our modules are captured first.
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake)
 
-# Installing conan dependencies
-if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
-   message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-   file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/v0.13/conan.cmake"
-                 "${CMAKE_BINARY_DIR}/conan.cmake")
-endif()
 
-include(${CMAKE_BINARY_DIR}/conan.cmake)
-
-conan_cmake_run(CONANFILE conanfile.txt  # or relative build/conanfile.txt
-                BASIC_SETUP CMAKE_TARGETS
-                BUILD missing)
-
-
-# Project directory structure for install
 include(CheckCXXCompilerFlag) # TODO: use new way
-include(GNUInstallDirs)
-
 include(CMakePackageConfigHelpers) # TODO:
 
-
 # Build flags
-set (CMAKE_CXX_STANDARD 11) # one of { 03, 11, 14 }
+set (CMAKE_CXX_STANDARD 11) # one of { 98, 11, 14 }
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Don't use non standard compiler extensions, for portability
@@ -61,7 +56,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(${PROJECT_NAME} INTERFACE)
 
 if(BUILD_PYTHON_PYBIND11 OR BUILD_PYTHON_SWIG)
-  if(NOT PYTHON_SITE_PACKAGES) # if not defined at build time, find it now
+  if(USE_PYTHON_INTEPERTER_SITE_PACKAGES) # if not defined at build time, find it now
     # https://cmake.org/cmake/help/v3.12/module/FindPython.html#module:FindPython
     find_package(Python REQUIRED COMPONENTS Interpreter Development)
 
@@ -73,11 +68,17 @@ if(BUILD_PYTHON_PYBIND11 OR BUILD_PYTHON_SWIG)
     if(Python_SITEARCH)
       set(PYTHON_SITE_PACKAGES ${Python_SITEARCH})
     else()
-      message(FATAL_ERROR 
-        "Could not detect Python packages installation directory."
+      message(WARNING 
+        "Could not detect Python packages installation directory and none was defined."
       )
     endif()
+  endif()
 
+  # TODO: an __init__.py file needs to be installed into ${PROJECT_NAMESPACE}.
+  if(PYTHON_SITE_PACKAGES)
+    set(PROJECT_PYTHON_PACKAGE_INSTALL_DIR ${PYTHON_SITE_PACKAGES}/${PROJECT_NAMESPACE}/${PROJECT_NAME})
+  else()
+    set(PROJECT_PYTHON_PACKAGE_INSTALL_DIR ${PROJECT_NAMESPACE}/${PROJECT_NAME})
   endif()
 
   if (BUILD_PYTHON_PYBIND11)
@@ -92,8 +93,8 @@ if(BUILD_PYTHON_PYBIND11 OR BUILD_PYTHON_SWIG)
   endif()
 endif()
 
-# Enable only coverage in Debug mode
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+# Enable only coverage in Debug mode and tests are enabled
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND BUILD_TESTS)
   include(CodeCoverage)
   append_coverage_compiler_flags()
 endif()
@@ -107,7 +108,12 @@ endif()
 # ------------------------------------------------------------------------------
 # Add project modules here
 # ------------------------------------------------------------------------------
+
+# functions to add modules and just invoking a function
+include(PracticalCIProject)
+
 add_subdirectory(src/core)
+
 # add_subdirectory(src/module1)
 
 
@@ -115,19 +121,63 @@ add_subdirectory(src/core)
 # Setup tests and checks
 # ------------------------------------------------------------------------------
 
-enable_testing()
+if(BUILD_TESTS)
+ 
+  find_package(Catch2 2.6 REQUIRED)
 
-# Enable only coverage in Debug mode, avoid adding debug symbols for Release mode.
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  # TODO: check per test coverage or coverage all tests.
-  setup_target_for_coverage_gcovr_html(NAME coverage EXECUTABLE core_test )
-  # setup_target_for_coverage_gcovr_html(NAME coverage EXECUTABLE module1_test )
+  enable_testing()
+
+  # Enable only coverage in Debug mode, avoid adding debug symbols for Release mode.
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # TODO: check per test coverage or coverage all tests.
+    setup_target_for_coverage_gcovr_html(NAME coverage EXECUTABLE ${PROJECT_TEST_TARGET})
+    # setup_target_for_coverage_gcovr_html(NAME coverage EXECUTABLE module1_test )
+  endif()
+
+
+  # Add here additional source files
+  add_executable(${PROJECT_TEST_TARGET} 
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/${PROJECT_TEST_TARGET}.cpp
+  )
+
+  # make sure you execute "conan install .." in the build directory
+  target_link_libraries(${PROJECT_TEST_TARGET} PRIVATE Catch2::Catch2)
+
+  # Register the tests
+  # TODO: check about registering test names to filter the tests
+  # check CTest
+  # add_test(NAME ${PROJECT_NAME}_test COMMAND ${PROJECT_NAME}_test)
+
+  # there is no way for ctest to display test output on failure from whithim cmake
+  # so add this custom command.
+  # SEE: 
+  # https://stackoverflow.com/a/36729074/3978614
+  # https://stackoverflow.com/a/31124523/3978614
+  add_custom_target(check_tests 
+      ${CMAKE_COMMAND} -E echo CWD=${CMAKE_BINARY_DIR}
+      COMMAND ${CMAKE_COMMAND} -E echo CMD=${CMAKE_CTEST_COMMAND} -C $<CONFIG>
+      COMMAND ${CMAKE_COMMAND} -E echo ----------------------------------
+      COMMAND ${CMAKE_COMMAND} -E env CTEST_OUTPUT_ON_FAILURE=1
+          ${CMAKE_CTEST_COMMAND} -C $<CONFIG> 
+          WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+          DEPENDS ${PROJECT_TEST_TARGET}
+  )
+
+# ------------------------------------------------------------------------------
+# Add project module tests
+# ------------------------------------------------------------------------------
+  
+  add_subdirectory(tests/core)
+
+  include(ParseAndAddCatchTests)
+  ParseAndAddCatchTests(${PROJECT_TEST_TARGET})
+
+  
 endif()
 
-add_subdirectory(test)
-
-add_subdirectory(doc)
-
+if(BUILD_DOC)
+  add_subdirectory(doc)
+endif()
 
 # install targets cmake file, previously registered targets in each module.
 install(EXPORT rock-targets
@@ -136,8 +186,28 @@ install(EXPORT rock-targets
   NAMESPACE
     rock::
   DESTINATION
-    ${CMAKE_INSTALL_LIBDIR}/cmake/rock
+    ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAMESPACE}
+  COMPONENT dev
 )
 
+# TODO: Install component targets, needs to be executed after the cmake build
+add_custom_target(install-lib
+#    DEPENDS # TODO: add interface libraries for targets ?
+    COMMAND 
+    "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=lib
+    -P "${CMAKE_BINARY_DIR}/cmake_install.cmake"
+)
 
+add_custom_target(install-dev
+#    DEPENDS docs # TODO: add interface libraries for targets ?
+    COMMAND 
+    "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=dev
+    -P "${CMAKE_BINARY_DIR}/cmake_install.cmake"
+)
+add_custom_target(install-python
+#    DEPENDS # TODO: add interface libraries for targets ?
+    COMMAND 
+    "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=python
+    -P "${CMAKE_BINARY_DIR}/cmake_install.cmake"
+)
 

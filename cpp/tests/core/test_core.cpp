@@ -1,11 +1,11 @@
-#include "catch.hpp"
+#include "catch2/catch.hpp"
 
-#include "rock/core/A.h"
-#include "rock/core/B.h"
-#include "rock/core/C.h"
-#include "rock/core/D.h"
+#include "org/rock/core/A.h"
+#include "org/rock/core/B.h"
+#include "org/rock/core/C.h"
+#include "org/rock/core/D.h"
 
-using namespace rock::core;
+using namespace org::rock::core;
 
 TEST_CASE( "Hierarchy test", "[hierarchy]" ) {
   A a("I am son of A.");

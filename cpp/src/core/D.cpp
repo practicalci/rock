@@ -3,11 +3,12 @@
  *
  */
 
-#include "rock/core/D.h"
+#include "org/rock/core/D.h"
 
 // private include
 #include "E.h"
 
+namespace org {
 namespace rock {
 namespace core {
 
@@ -41,3 +42,4 @@ const std::string D::get_class_name() const
 
 } // namespace core
 } // namespace rock
+} // namespace org
