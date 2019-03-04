@@ -39,6 +39,8 @@ function(practci_add_cpp_module)
     # TODO: refactor these variables
     set(MODULE_INSTALL_LIBDIR ${PROJECT_INSTALL_LIBDIR})
     set(MODULE_INSTALL_INCLUDEDIR ${PROJECT_INSTALL_INCLUDEDIR}/${MODULE_NAME})
+    set(MODULE_INSTALL_PYTHON_SITEARCH ${PROJECT_INSTALL_PYTHON_SITEARCH}/${MODULE_NAME})
+
 
     set(MODULE_INCLUDEDIR ${PROJECT_INCLUDEDIR}/${MODULE_NAME})
 
@@ -130,7 +132,7 @@ function(practci_add_cpp_module)
       # TODO: disabled now target_link_libraries(python_pybind11 INTERFACE ${MODULE_PYTHON_TARGET_NAME}) # TODO: review this target name.
 
       install(TARGETS ${MODULE_PYTHON_TARGET_NAME}
-        LIBRARY DESTINATION ${PROJECT_PYTHON_PACKAGE_INSTALL_DIR} COMPONENT python
+        LIBRARY DESTINATION ${MODULE_INSTALL_PYTHON_SITEARCH} COMPONENT python
       )
     endif()
 
