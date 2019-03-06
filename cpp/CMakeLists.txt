@@ -14,15 +14,11 @@ option(BUILD_STATIC "Build static libraries." OFF)
 option(BUILD_PYTHON_PYBIND11 "Build pybind11 python bindings." ON)
 option(BUILD_PYTHON_SWIG "Build pybind11 python bindings." OFF)
 
-
-
-
 option(BUILD_DOC "Build code documentation using Doxygen." OFF)
 option(BUILD_TESTS "Build project tests" ON)
 
-option(USE_PYTHON_INTEPERTER_SITE_PACKAGES 
-  "set PYTHON_SITE_PACKAGES using cmake Python package interperter Python_SITEARCH" ON)
-
+# INSTALL_FOR_PYPI means that the libs go under the package
+option(INSTALL_FOR_PYPI "Install project and python bindings for pypi package." OFF)
 
 # ------------------------------------------------------------------------------
 # Add external cmake modules to project.
@@ -60,18 +56,8 @@ add_library(${PROJECT_NAME} INTERFACE)
 
 if(BUILD_PYTHON_PYBIND11 OR BUILD_PYTHON_SWIG)
 
-set(CMAKE_INSTALL_PYTHON_PACKAGE_MODE "Dev" CACHE STRING 
-"Python package instalation mode. One of {Dev, Conda, Pypi}.\
-Dev - development mode, install libs in the build tree and python module and \
-extensions under the current python interperter environment.\
-Conda - setup directory structure for conda python package.\
-Pypi - setup directory structure for pypi python package, all libs go under\
-<package_name>/lib, idealy statically linked.\
-"
-)
-
   # multi value options, see https://stackoverflow.com/a/47612735/3978614
-  set_property(CACHE CMAKE_INSTALL_PYTHON_PACKAGE_MODE PROPERTY STRINGS Dev Conda Pypi)
+
 
   find_package(Python REQUIRED COMPONENTS Interpreter Development)
   # Python_STDLIB # Standard platform independent installation directory.
@@ -91,34 +77,52 @@ Pypi - setup directory structure for pypi python package, all libs go under\
   # Python_SITELIB: /usr/lib/python3/dist-packages
   # Python_SITEARCH: /usr/lib/python3/dist-packages
 
+  # compute the python instalation prefix.
   if(Python_FOUND)
-    string(REGEX MATCH "python([0-9]|\.)+.*$" CMAKE_INSTALL_PYTHON_STDLIB ${Python_STDLIB})
-    message("CMAKE_INSTALL_PYTHON_STDLIB: ${CMAKE_INSTALL_PYTHON_STDLIB}")
+    if(NOT CMAKE_INSTALL_PYTHON_STDLIB)
+      string(REGEX MATCH "python([0-9]|\.)+.*$" CMAKE_INSTALL_PYTHON_STDLIB ${Python_STDLIB})
+      message("CMAKE_INSTALL_PYTHON_STDLIB: ${CMAKE_INSTALL_PYTHON_STDLIB}")
+    endif()
 
-    string(REGEX MATCH "python([0-9]|\.)+.*$" CMAKE_INSTALL_PYTHON_STDARCH ${Python_STDARCH})
-    message("CMAKE_INSTALL_PYTHON_SITEARCH: ${CMAKE_INSTALL_PYTHON_STDARCH}")
+    if(NOT CMAKE_INSTALL_PYTHON_STDARCH)
+      string(REGEX MATCH "python([0-9]|\.)+.*$" CMAKE_INSTALL_PYTHON_STDARCH ${Python_STDARCH})
+      message("CMAKE_INSTALL_PYTHON_STDARCH: ${CMAKE_INSTALL_PYTHON_STDARCH}")
+    endif()
 
-    string(REGEX MATCH "python([0-9]|\.)+.*$" CMAKE_INSTALL_PYTHON_SITELIB ${Python_SITELIB})
-    message("CMAKE_INSTALL_PYTHON_SITELIB: ${CMAKE_INSTALL_PYTHON_SITELIB}")
+    if(NOT CMAKE_INSTALL_PYTHON_SITELIB)
+      string(REGEX MATCH "python([0-9]|\.)+.*$" CMAKE_INSTALL_PYTHON_SITELIB ${Python_SITELIB})
+      message("CMAKE_INSTALL_PYTHON_SITELIB: ${CMAKE_INSTALL_PYTHON_SITELIB}")
+    endif()
 
-    string(REGEX MATCH "python([0-9]|\.)+.*$" CMAKE_INSTALL_PYTHON_SITEARCH ${Python_SITEARCH})
-    message("CMAKE_INSTALL_PYTHON_SITEARCH: ${CMAKE_INSTALL_PYTHON_SITEARCH}")
+    if(NOT CMAKE_INSTALL_PYTHON_SITEARCH)
+      string(REGEX MATCH "python([0-9]|\.)+.*$" CMAKE_INSTALL_PYTHON_SITEARCH ${Python_SITEARCH})
+      message("CMAKE_INSTALL_PYTHON_SITEARCH: ${CMAKE_INSTALL_PYTHON_SITEARCH}")
+    endif()
   endif()
 
-  set(PROJECT_INSTALL_PYTHON_COMPONENTS "python")
+  # default setup of the project instalation folders
   set(PROJECT_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_PREFIX})
   set(PROJECT_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}/${PROJECT_PREFIX})
+  set(PROJECT_INSTALL_PYTHON_SITEARCH ${CMAKE_INSTALL_LIBDIR}/${CMAKE_INSTALL_PYTHON_SITEARCH}/${PROJECT_PREFIX})
 
+  if(INSTALL_FOR_PYPI)
+    # if Pypi, then python packages go under 
+    # <package_name>
+    # and libs go under 
+    # <package_name>/lib
 
-  if(${CMAKE_INSTALL_PYTHON_PACKAGE_MODE} STREQUAL "Conda")
-    set(PROJECT_INSTALL_PYTHON_SITEARCH ${CMAKE_INSTALL_LIBDIR}/${CMAKE_INSTALL_PYTHON_SITEARCH}/${PROJECT_PREFIX})
-  elseif(${CMAKE_INSTALL_PYTHON_PACKAGE_MODE} STREQUAL "Pypi")
-    set(PROJECT_INSTALL_PYTHON_COMPONENTS "lib,python")
-    set(PROJECT_INSTALL_PYTHON_SITEARCH ${CMAKE_INSTALL_PYTHON_SITEARCH}/${PROJECT_PREFIX})
+    if(SKBUILD) # build by python scikit-build
+      set(PROJECT_INSTALL_PYTHON_SITEARCH ${PROJECT_PREFIX})
+    else()
+      set(PROJECT_INSTALL_PYTHON_SITEARCH ${CMAKE_INSTALL_PYTHON_SITEARCH}/${PROJECT_PREFIX})
+    endif()
+
     set(PROJECT_INSTALL_LIBDIR ${PROJECT_INSTALL_PYTHON_SITEARCH}/${CMAKE_INSTALL_LIBDIR}/${PROJECT_PREFIX})
-  elseif(${CMAKE_INSTALL_PYTHON_PACKAGE_MODE} STREQUAL "Dev")
-
   endif()
+
+  message("PROJECT_INSTALL_PYTHON_PACKAGE_MODE:${PROJECT_INSTALL_PYTHON_PACKAGE_MODE}")
+  message("PROJECT_INSTALL_PYTHON_SITEARCH:${PROJECT_INSTALL_PYTHON_SITEARCH}")
+  message("PROJECT_INSTALL_LIBDIR:${PROJECT_INSTALL_LIBDIR}")
 
   if (BUILD_PYTHON_PYBIND11)
     find_package(pybind11 REQUIRED)
@@ -202,9 +206,9 @@ if(BUILD_TESTS)
           DEPENDS ${PROJECT_TEST_TARGET}
   )
 
-# ------------------------------------------------------------------------------
-# Add project module tests
-# ------------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # Add project module tests
+  # ----------------------------------------------------------------------------
   
   add_subdirectory(tests/core)
 
@@ -214,20 +218,23 @@ if(BUILD_TESTS)
   
 endif()
 
-if(BUILD_DOC)
+if(BUILD_DOC AND NOT INSTALL_FOR_PYPI)
   add_subdirectory(doc)
 endif()
 
 # install targets cmake file, previously registered targets in each module.
-install(EXPORT rock-targets
-  FILE
-    rockTargets.cmake
-  NAMESPACE
-    rock::
-  DESTINATION
-    ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAMESPACE}
-  COMPONENT dev
-)
+if(NOT INSTALL_FOR_PYPI)
+  message("EXPORT rock-targets:---------------------")
+  install(EXPORT rock-targets
+    FILE
+      rockTargets.cmake
+    NAMESPACE
+      rock::
+    DESTINATION
+      ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAMESPACE}
+    COMPONENT dev
+  )
+endif()
 
 # TODO: Install component targets, needs to be executed after the cmake build
 add_custom_target(install-lib
@@ -250,7 +257,7 @@ add_custom_target(install-dev
 add_custom_target(install-python
 #    DEPENDS # TODO: add interface libraries for targets ?
   COMMAND 
-    "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=${PROJECT_INSTALL_PYTHON_COMPONENTS}
+    "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=python
     -P "${CMAKE_BINARY_DIR}/cmake_install.cmake"
   WORKING_DIRECTORY
     ${CMAKE_BINARY_DIR}

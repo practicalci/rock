@@ -4,6 +4,7 @@ import os
 import sys
 
 
+from skbuild import setup
 from setuptools import find_packages
 
 with open(os.path.join('..','README.rst')) as readme_file:
@@ -43,35 +44,42 @@ setup_requires = pytest_runner
 cmake_args = [
     '-DBUILD_PYTHON_PYBIND11=ON',
 #    '-DBUILD_PYTHON_SWIG=ON',
+    '-DINSTALL_FOR_PYPI=ON',
 ]
 
-if os.environ.get('CONDA_BUILD') == '1': # if under conda build
-    cmake_args += [
-        '-DCMAKE_INSTALL_PREFIX={}'.format(os.environ['PREFIX']),
-    ]
-elif os.environ.get('CONDA_PREFIX') and os.environ.get('CONDA_DEFAULT_ENV'):
-    cmake_args += [
-        '-DCMAKE_INSTALL_PREFIX={}'.format(os.environ['CONDA_PREFIX']),
-        '-DUSE_PYTHON_INTEPERTER_SITE_PACKAGES=ON',
-    ]
+#if os.environ.get('CONDA_BUILD') == '1': # if under conda build
+#    cmake_args += [
+#        '-DCMAKE_INSTALL_PREFIX={}'.format(os.environ['PREFIX']),
+#    ]
+#elif os.environ.get('CONDA_PREFIX') and os.environ.get('CONDA_DEFAULT_ENV'):
+#    cmake_args += [
+#        '-DCMAKE_INSTALL_PREFIX={}'.format(os.environ['CONDA_PREFIX']),
+#        '-DUSE_PYTHON_INTEPERTER_SITE_PACKAGES=ON',
+#    ]
+#else:
+#    cmake_args += [
+#        '-DINSTALL_FOR_PYPI=ON',
+#        '-DCMAKE_INSTALL_PREFIX={}'.format(os.environ['CONDA_PREFIX']),
+#        '-DUSE_PYTHON_INTEPERTER_SITE_PACKAGES=ON',
+#    ]
 
-
-
+# see namespace packages https://packaging.python.org/guides/packaging-namespace-packages/#native-namespace-packages
 setup(
-    name='rock',
+    name='org-rock',
     version='1.0.0',
     description='A rock solid project',
     long_description=readme,
     author='First Last',
     author_email='first.last@gmail.com',
     license='MIT',
-    packages=find_packages(exclude=['*.tests', '*.tests.*', 'tests.*', 'tests']),
+    packages=['org.rock'], # find_packages(exclude=['*.tests', '*.tests.*', 'tests.*', 'tests']),
     install_requires=requirements,
     tests_require=['pytest'],
     setup_requires=setup_requires,
     test_suite='tests',
     cmake_source_dir=os.path.join('..','cpp'),
     cmake_args=cmake_args,
+    cmake_minimum_required_version='3.12',
 
 #[
 #
