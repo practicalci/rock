@@ -5,12 +5,12 @@ channels:
 dependencies:
   - cookiecutter=1.6
 # --- C++ dependencies ---
-# - catch2=2.6
+  - catch2=2.6
   - cmake=3.13
   - conan=1.12
   - ninja=1.9
   - scikit-build=0.8
-  - bump2version=5.8
+  - bump2version=0.5.8
   - python=3.6
 # --- dev dependencies ---
   - pybind11=2.2
