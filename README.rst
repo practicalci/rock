@@ -530,19 +530,19 @@ Set of requirements to support TDD development cycle.
 
 1. C++ tests
 
-  1. execute all tests, exporting gcov (coverage) results.
-  2. execute and filter tests based on tags, such:
+   1. execute all tests, exporting gcov (coverage) results.
+   2. execute and filter tests based on tags, such:
 
-    1. ``[perf]``  - performance related tests ?
-    2. ``[mem]``   - memory memory related tests ?
-    3. ``[func1]`` - functionality 1 ...
+      1. ``[perf]``  - performance related tests ?
+      2. ``[mem]``   - memory memory related tests ?
+      3. ``[func1]`` - functionality 1 ...
 
-  3. execute tests under valgrind, to check for memory issues.
+   3. execute tests under valgrind, to check for memory issues.
 
 2. test python integration
 
-  1. execute tests under valgrind, to check for memory issues.
-  2. execute performance tests, with time outputs.
+   1. execute tests under valgrind, to check for memory issues.
+   2. execute performance tests, with time outputs.
 
 
 Additional Checks
